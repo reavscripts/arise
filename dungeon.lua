@@ -21,6 +21,7 @@ for _, v in pairs(player.Character:FindFirstChild("CharacterScripts"):GetChildre
         v:Destroy()
     end
 end
+
 player.CharacterAdded:Connect(function(char)
     char:WaitForChild("Humanoid").WalkSpeed = getgenv().Speed
     for _, v in pairs(player.Character:FindFirstChild("CharacterScripts"):GetChildren()) do
@@ -115,125 +116,134 @@ local function closest()
         end
     end
 end
-		local dungeon = false
-		f:Toggle("Autofarm (TP)", function(bool) 
-			dungeon = bool
-		end)
-		local f = w:CreateFolder("RAID")
-		-- MultiPlayer toggle setup
-		local dungeon2
-		f:Toggle("Aura (Closest)", function(bool) 
-			dungeon2 = bool
-		end)
-		local PLAYERS = {}
-		for _, v in pairs(game.Players:GetPlayers()) do
-			if v.Name ~= player.Name and not table.find(PLAYERS, v.Name) then
-				table.insert(PLAYERS, v.Name)
-				task.wait()
-			end
-		end
-		-- Dropdown for selecting player to follow
-		f:Label("Follow to farm with friend", {TextSize = 14, TextColor = Color3.fromRGB(255,255,255), BgColor = Color3.fromRGB(69,69,69)})
-		local dropdown
-		f:Dropdown("Follow Player1:", PLAYERS, true, function(func) 
-			dropdown = func
-		end)
-		local function attackEnemy(v)
-			local args = {
-				[1] = {
-					[1] = {
-						["PetPos"] = {},
-						["AttackType"] = "All",
-						["Event"] = "Attack",
-						["Enemy"] = v.Name
-					},
-					[2] = "\t"
-				}
-			}
-			for _, attackType in ipairs({"\t", "\5", "\7"}) do
-				args[1][2] = attackType
-				game:GetService("ReplicatedStorage").BridgeNet2.dataRemoteEvent:FireServer(unpack(args))
-			end
-		end
 
-		local function weaponAttack(v)
-			local args = {
-				[1] = {
-					[1] = {
-						["Event"] = "PunchAttack",
-						["Enemy"] = v.Name
-					},
-					[2] = "\4"
-				}
-			}
-			game:GetService("ReplicatedStorage").BridgeNet2.dataRemoteEvent:FireServer(unpack(args))
-		end
+-- Create RAID folder and setup toggles
+local f = w:CreateFolder("RAID")
+local dungeon = false
+f:Toggle("Autofarm (TP)", function(bool) 
+    dungeon = bool
+end)
 
-		-- Main enemy interaction loop
-		spawn(function()
-			while task.wait() do
-				if dungeon then
-					-- Aspetta finché non ci sono nemici validi
-					local foundEnemy = false
-					repeat
-						foundEnemy = false
-						local enemies = workspace["__Main"]["__Enemies"]["Client"]:GetChildren()
-						for _, v in pairs(enemies) do
-							if v.ClassName == "Model" and v:FindFirstChild("HumanoidRootPart") and not v:FindFirstChild("Highlight") then
-								foundEnemy = true
-								break
-							end
-						end
-						if not foundEnemy then
-							task.wait(1) -- aspetta un po’ prima di ricontrollare
-						end
-					until foundEnemy or not dungeon
+local dungeon2
+f:Toggle("Aura (Closest)", function(bool) 
+    dungeon2 = bool
+end)
 
-					-- Ora attacca tutti i nemici validi uno per uno
-					local enemies = workspace["__Main"]["__Enemies"]["Client"]:GetChildren()
-					for _, v in pairs(enemies) do
-						if v.ClassName == "Model" and v:FindFirstChild("HumanoidRootPart") and not v:FindFirstChild("Highlight") then
-							local enemyServer = workspace["__Main"]["__Enemies"]["Server"]:FindFirstChild(v.Name)
-							if enemyServer then
-								pcall(function()
-									repeat task.wait()
-										player.Character.HumanoidRootPart.CFrame = v.HumanoidRootPart.CFrame - player.Character.HumanoidRootPart.CFrame.lookVector * -8
-										if petdamage and not v:FindFirstChild("Highlight") then
-											attackEnemy(v)
-										end
-										if weapondamage and v:FindFirstChild("Highlight") then
-											weaponAttack(v)
-										end
-									until v:FindFirstChild("HealthBar").Main.Bar.Amount.Text == "0 HP" or not dungeon
-								end)
+-- Initialize the PLAYERS list
+local PLAYERS = {}
 
-								local event = arise and "EnemyCapture" or "EnemyDestroy"
-								local args = {
-									[1] = {
-										[1] = {
-											["Event"] = event,
-											["Enemy"] = v.Name
-										},
-										[2] = "\4"
-									}
-								}
-								game:GetService("ReplicatedStorage").BridgeNet2.dataRemoteEvent:FireServer(unpack(args))
-							end
-						end
-					end
-				end
-			end
-		end)
-	
+-- Update the PLAYERS table with existing players
+for _, v in pairs(game.Players:GetPlayers()) do
+    if v.Name ~= player.Name then
+        table.insert(PLAYERS, v.Name)
+    end
+end
 
-		spawn(function()
-			while task.wait() do
-				if dungeon2 then
-					closest()
-				end
-			end
-		end)
-		
+-- Dropdown for selecting player to follow
+f:Label("Follow to farm with friend", {TextSize = 14, TextColor = Color3.fromRGB(255,255,255), BgColor = Color3.fromRGB(69,69,69)})
+
+-- Ensure that PLAYERS is updated and used correctly in the dropdown
+local dropdown
+f:Dropdown("Follow Player1:", PLAYERS, true, function(func)
+    dropdown = func
+end)
+
+local function attackEnemy(v)
+    local args = {
+        [1] = {
+            [1] = {
+                ["PetPos"] = {},
+                ["AttackType"] = "All",
+                ["Event"] = "Attack",
+                ["Enemy"] = v.Name
+            },
+            [2] = "\t"
+        }
+    }
+    for _, attackType in ipairs({"\t", "\5", "\7"}) do
+        args[1][2] = attackType
+        game:GetService("ReplicatedStorage").BridgeNet2.dataRemoteEvent:FireServer(unpack(args))
+    end
+end
+
+local function weaponAttack(v)
+    local args = {
+        [1] = {
+            [1] = {
+                ["Event"] = "PunchAttack",
+                ["Enemy"] = v.Name
+            },
+            [2] = "\4"
+        }
+    }
+    game:GetService("ReplicatedStorage").BridgeNet2.dataRemoteEvent:FireServer(unpack(args))
+end
+
+-- Main enemy interaction loop
+spawn(function()
+    while task.wait() do
+        if dungeon then
+            -- Wait for valid enemies to appear
+            local foundEnemy = false
+            repeat
+                foundEnemy = false
+                local enemies = workspace["__Main"]["__Enemies"]["Client"]:GetChildren()
+                for _, v in pairs(enemies) do
+                    if v.ClassName == "Model" and v:FindFirstChild("HumanoidRootPart") and not v:FindFirstChild("Highlight") then
+                        foundEnemy = true
+                        break
+                    end
+                end
+                if not foundEnemy then
+                    task.wait(1) -- wait before checking again
+                end
+            until foundEnemy or not dungeon
+
+            -- Attack valid enemies one by one
+            local enemies = workspace["__Main"]["__Enemies"]["Client"]:GetChildren()
+            for _, v in pairs(enemies) do
+                if v.ClassName == "Model" and v:FindFirstChild("HumanoidRootPart") and not v:FindFirstChild("Highlight") then
+                    local enemyServer = workspace["__Main"]["__Enemies"]["Server"]:FindFirstChild(v.Name)
+                    if enemyServer then
+                        pcall(function()
+                            repeat task.wait()
+                                player.Character.HumanoidRootPart.CFrame = v.HumanoidRootPart.CFrame - player.Character.HumanoidRootPart.CFrame.lookVector * -8
+                                if petdamage and not v:FindFirstChild("Highlight") then
+                                    attackEnemy(v)
+                                end
+                                if weapondamage and v:FindFirstChild("Highlight") then
+                                    weaponAttack(v)
+                                end
+                            until v:FindFirstChild("HealthBar").Main.Bar.Amount.Text == "0 HP" or not dungeon
+                        end)
+
+                        local event = arise and "EnemyCapture" or "EnemyDestroy"
+                        local args = {
+                            [1] = {
+                                [1] = {
+                                    ["Event"] = event,
+                                    ["Enemy"] = v.Name
+                                },
+                                [2] = "\4"
+                            }
+                        }
+                        game:GetService("ReplicatedStorage").BridgeNet2.dataRemoteEvent:FireServer(unpack(args))
+                    end
+                end
+            end
+        end
+    end
+end)
+
+spawn(function()
+    while task.wait() do
+        if dungeon2 then
+            closest()
+        end
+    end
+end)
+
+-- Credits
 local g = w:CreateFolder("Credits")
 g:Label("made by reav#2966",{
     TextSize = 20;
