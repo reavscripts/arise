@@ -125,7 +125,13 @@ end
 		f:Toggle("Aura (Closest)", function(bool) 
 			dungeon2 = bool
 		end)
-
+		local PLAYERS = {}
+		for _, v in pairs(game.Players:GetPlayers()) do
+			if v.Name ~= player.Name and not table.find(PLAYERS, v.Name) then
+				table.insert(PLAYERS, v.Name)
+				task.wait()
+			end
+		end
 		-- Dropdown for selecting player to follow
 		f:Label("Follow to farm with friend", {TextSize = 14, TextColor = Color3.fromRGB(255,255,255), BgColor = Color3.fromRGB(69,69,69)})
 		local dropdown
