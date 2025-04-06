@@ -243,18 +243,27 @@ spawn(function()
     end
 end)
 
--- Credits
+local StarterGui = game:GetService("StarterGui")
+
 local g = w:CreateFolder("Credits")
-g:Label("made by reav#2966",{
-    TextSize = 20;
-    TextColor = Color3.fromRGB(255,255,255); 
-    BgColor = Color3.fromRGB(69,69,69);
-}) 
-g:Label("discord.gg/8Fxnd74Eyq",{
-    TextSize = 18;
-    TextColor = Color3.fromRGB(255,255,255); 
-    BgColor = Color3.fromRGB(69,69,69); 
-}) 
-g:Button("Copy Discord Link",function()
+
+g:Label("made by reav#2966", {
+    TextSize = 20,
+    TextColor = Color3.fromRGB(255,255,255),
+    BgColor = Color3.fromRGB(69,69,69),
+})
+
+g:Label("discord.gg/8Fxnd74Eyq", {
+    TextSize = 18,
+    TextColor = Color3.fromRGB(255,255,255),
+    BgColor = Color3.fromRGB(69,69,69),
+})
+
+g:Button("Copy Discord Link", function()
     setclipboard("https://discord.gg/8Fxnd74Eyq")
+    StarterGui:SetCore("SendNotification", {
+        Title = "Copied!",
+        Text = "Discord link copied to clipboard.\nPaste it in your browser.",
+        Duration = 5
+    })
 end)
