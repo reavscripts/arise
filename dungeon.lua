@@ -115,7 +115,10 @@ local function closest()
         end
     end
 end
-
+		local dungeon = false
+		f:Toggle("Autofarm (TP)", function(bool) 
+			dungeon = bool
+		end)
 		local f = w:CreateFolder("RAID")
 		-- MultiPlayer toggle setup
 		local dungeon2
