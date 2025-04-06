@@ -218,27 +218,37 @@ local e = w:CreateFolder("World")
 	end
 
 	local h = w:CreateFolder("Mount TP")
-	
-	local wilds = workspace.__Main.__World.Wilds
 
-	local wildsNumber = {}
-	for _, child in ipairs(wilds:GetChildren()) do
-		table.insert(wildsNumber, child)
+	local wilds = workspace.__Main.__World:FindFirstChild("Wilds")
+	if not wilds then
+		warn("Wilds not found")
+		return
 	end
 
-	table.sort(wildsNumber, function(a, b)
+	local wildsList = {}
+	for _, model in ipairs(wilds:GetChildren()) do
+		if model:IsA("Model") then
+			table.insert(wildsList, model)
+		end
+	end
+
+	table.sort(wildsList, function(a, b)
 		return a.Name < b.Name
 	end)
 
-	for index, child in ipairs(wildsNumber) do
+	for index, model in ipairs(wildsList) do
+		local newName = "Location " .. index
+		model.Name = newName
 
-		local newName = tostring(index) .. ". Location" 
-		child.Name = newName  
+		local targetModel = model
 
-		local buttonName = newName  
-		
-		h:Button(buttonName, function()
-			player.Character.HumanoidRootPart.CFrame = child.CFrame
+		h:Button(newName, function()
+			local char = player.Character
+			if char and char:FindFirstChild("HumanoidRootPart") and targetModel then
+				char:PivotTo(targetModel:GetPivot())
+			else
+				warn("HumanoidRootPart not found")
+			end
 		end)
 	end
 
