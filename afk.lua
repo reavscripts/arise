@@ -1,1 +1,1 @@
-olè
+print("OLE")
